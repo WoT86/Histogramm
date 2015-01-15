@@ -8,7 +8,8 @@ HistogramView::HistogramView(QWidget *parent) :
     gridEnabled(true),
     scaleEnabled(true),
     scaleHeight(10),
-    scaleType(COLORCODE)
+    scaleType(COLORCODE),
+    data(NULL)
 {
 }
 
@@ -58,6 +59,29 @@ void HistogramView::setScaleType(HistogramView::ScaleType type)
     this->update();
 }
 
+void HistogramView::setData(HistogramData *data)
+{
+    if(data)
+    {
+        this->data = data;
+        this->keys = data->getKeys();
+        this->keyState.clear();
+        this->keyState.fill(true,this->keys.size());
+        this->keyColor.clear();
+
+        int i = 4;
+
+        for(int k = 0; k < this->keys.size();k++)
+        {
+            this->keyColor.append(QColor(i));
+            i++;
+            if(i == 19)
+                i = 4;
+        }
+    }
+    this->update();
+}
+
 void HistogramView::paintEvent(QPaintEvent *event)
 {
     Q_UNUSED(event)
@@ -75,6 +99,48 @@ void HistogramView::paintEvent(QPaintEvent *event)
     //Scale
     if(this->scaleEnabled)
         this->drawScale();
+
+    //Plot
+    if(this->data)
+    {
+        if(this->data->isValid())
+        {
+            qreal binWidth = (qreal) this->rect().width() / (qreal) this->data->getNumberOfBins();
+            int i = 0; //iterates through keyState
+            foreach (int key, this->keys)
+            {
+                if(this->keyState[i])
+                {
+                    QPolygonF poly;
+                    unsigned int max = this->data->getBinMax(key);
+                    const HistogramData::Bins* bins = this->data->getBins(key);
+
+                    int viewHeight = this->rect().height() - this->scaleHeight;
+
+                    int x = 0;
+
+                    if(bins->first() != 0)      //otherwise the polygon looks strange
+                        poly << QPointF(0,viewHeight);
+
+                    foreach (unsigned int y, *bins)
+                    {
+                        poly << QPointF(x*binWidth,viewHeight - (y*viewHeight/max));
+                        x++;
+                    }
+
+                    if(bins->last() != 0) //otherwise the polygon looks strange
+                        poly << QPointF(this->rect().width(),viewHeight);
+
+                    QPainter paintPlot(this);
+                    paintPlot.setBrush(QBrush(this->keyColor[i],Qt::SolidPattern));
+                    paintPlot.drawPolygon(poly);
+                }
+
+                i++;
+            }
+        }
+    }
+
 }
 
 void HistogramView::drawGrid()
@@ -115,4 +181,34 @@ void HistogramView::drawScale()
         painter.setBrush(gradient);
         painter.drawRect(0,this->rect().height()-this->scaleHeight,this->rect().width(),this->scaleHeight);
     }
+}
+
+bool HistogramView::toggleKey(int key)
+{
+    int i = this->keys.indexOf(key);
+
+    if(i > -1)
+    {
+        this->keyState[i] = !(this->keyState[i]);
+        this->update();
+        return true;
+    }
+
+    return false;
+}
+
+bool HistogramView::setKeyColor(int key, const QColor &color)
+{
+    int i = this->keys.indexOf(key);
+
+    if(i > -1)
+    {
+        QColor alpha = color;
+        alpha.setAlpha(200);
+        this->keyColor[i] = alpha;
+        this->update();
+        return true;
+    }
+
+    return false;
 }

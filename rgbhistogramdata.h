@@ -9,6 +9,7 @@
 
 class RGBHistogramData : public HistogramData
 {
+public:
     enum Channel
     {
         RED = 1, BLUE = 2, GREEN = 3
@@ -20,7 +21,7 @@ public:
 
     bool isValid();
 
-    void calculate(int numberOfBins);
+    virtual void calculate(int numberOfBins);
 
 protected:
     const QImage* image;

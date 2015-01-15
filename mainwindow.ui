@@ -19,6 +19,9 @@
      <property name="text">
       <string>Red Channel</string>
      </property>
+     <property name="checked">
+      <bool>true</bool>
+     </property>
     </widget>
    </item>
    <item>
@@ -26,12 +29,18 @@
      <property name="text">
       <string>Green Channel</string>
      </property>
+     <property name="checked">
+      <bool>true</bool>
+     </property>
     </widget>
    </item>
    <item>
     <widget class="QCheckBox" name="checkBoxBlue">
      <property name="text">
       <string>Blue Channel</string>
+     </property>
+     <property name="checked">
+      <bool>true</bool>
      </property>
     </widget>
    </item>

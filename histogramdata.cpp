@@ -9,9 +9,9 @@ int HistogramData::getNumberOfBins() const
     return this->numberOfBins;
 }
 
-int HistogramData::getBinSize() const
+int HistogramData::getBinSize(int key) const
 {
-    return this->binSize;
+    return this->binSize[key];
 }
 
 unsigned int HistogramData::getBinMax(int key) const
@@ -22,4 +22,9 @@ unsigned int HistogramData::getBinMax(int key) const
 const HistogramData::Bins *HistogramData::getBins(int key) const
 {
     return this->binMap.value(key);
+}
+
+QList<int> HistogramData::getKeys() const
+{
+    return this->binMap.keys();
 }

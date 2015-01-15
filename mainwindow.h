@@ -2,7 +2,11 @@
 #define MAINWINDOW_H
 
 #include <QDialog>
+#include <QFileDialog>
+#include <QPixmap>
+#include <QImage>
 #include "histogramview.h"
+#include "rgbhistogramdata.h"
 
 namespace Ui {
 class MainWindow;
@@ -16,10 +20,20 @@ public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
 
+private slots:
+    void on_buttonLoad_clicked();
+
+    void on_checkBoxRed_clicked();
+
+    void on_checkBoxGreen_clicked();
+
+    void on_checkBoxBlue_clicked();
+
 private:
     Ui::MainWindow *ui;
 
     HistogramView *view;
+    HistogramData *data;
 };
 
 #endif // MAINWINDOW_H

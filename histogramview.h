@@ -5,6 +5,10 @@
 #include <QPainter>
 #include <QPen>
 #include <QLinearGradient>
+#include <QList>
+#include <QVector>
+
+#include "histogramdata.h"
 
 class HistogramView : public QWidget
 {
@@ -29,6 +33,11 @@ public:
     void setScaleHeight(int height);
     void setScaleType(ScaleType type);
 
+    void setData(HistogramData* data);
+
+    bool toggleKey(int key);
+    bool setKeyColor(int key, const QColor& color);
+
 protected:
     void paintEvent(QPaintEvent* event);
 
@@ -49,6 +58,12 @@ protected:
     bool        scaleEnabled;
     int         scaleHeight;
     ScaleType   scaleType;
+
+    HistogramData* data;
+
+    QList<int>      keys;
+    QVector<bool>   keyState;
+    QVector<QColor> keyColor;
 };
 
 #endif // HISTOGRAMVIEW_H
