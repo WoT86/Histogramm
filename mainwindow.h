@@ -29,11 +29,18 @@ private slots:
 
     void on_checkBoxBlue_clicked();
 
+    void on_radioButtonRel_clicked();
+
+    void on_radioButtonAbs_clicked();
+
+    void on_radioButtonRelEach_clicked();
+
+    void on_buttonCalc_clicked();
+
 private:
     Ui::MainWindow *ui;
-
-    HistogramView *view;
     HistogramData *data;
+    QImage* image;
 };
 
 #endif // MAINWINDOW_H

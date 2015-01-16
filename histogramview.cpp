@@ -9,7 +9,8 @@ HistogramView::HistogramView(QWidget *parent) :
     scaleEnabled(true),
     scaleHeight(10),
     scaleType(COLORCODE),
-    data(NULL)
+    data(NULL),
+    largestBinSize(0)
 {
 }
 
@@ -63,23 +64,32 @@ void HistogramView::setData(HistogramData *data)
 {
     if(data)
     {
+        if(this->data)
+            disconnect(this->data,SIGNAL(updated()),this,SLOT(dataUpdated()));
+
         this->data = data;
         this->keys = data->getKeys();
         this->keyState.clear();
         this->keyState.fill(true,this->keys.size());
-        this->keyColor.clear();
+        this->keyBrush.clear();
+        this->keyPlotType.clear();
 
         int i = 4;
 
         for(int k = 0; k < this->keys.size();k++)
         {
-            this->keyColor.append(QColor(i));
+            QColor color(i);
+            color.setAlpha(200);
+            this->keyBrush.append(QBrush(color));
+            this->keyPlotType.append(RELATIVE);
             i++;
             if(i == 19)
                 i = 4;
         }
+
+        connect(data,SIGNAL(updated()),this,SLOT(dataUpdated()));
     }
-    this->update();
+    this->dataUpdated();
 }
 
 void HistogramView::paintEvent(QPaintEvent *event)
@@ -101,46 +111,7 @@ void HistogramView::paintEvent(QPaintEvent *event)
         this->drawScale();
 
     //Plot
-    if(this->data)
-    {
-        if(this->data->isValid())
-        {
-            qreal binWidth = (qreal) this->rect().width() / (qreal) this->data->getNumberOfBins();
-            int i = 0; //iterates through keyState
-            foreach (int key, this->keys)
-            {
-                if(this->keyState[i])
-                {
-                    QPolygonF poly;
-                    unsigned int max = this->data->getBinMax(key);
-                    const HistogramData::Bins* bins = this->data->getBins(key);
-
-                    int viewHeight = this->rect().height() - this->scaleHeight;
-
-                    int x = 0;
-
-                    if(bins->first() != 0)      //otherwise the polygon looks strange
-                        poly << QPointF(0,viewHeight);
-
-                    foreach (unsigned int y, *bins)
-                    {
-                        poly << QPointF(x*binWidth,viewHeight - (y*viewHeight/max));
-                        x++;
-                    }
-
-                    if(bins->last() != 0) //otherwise the polygon looks strange
-                        poly << QPointF(this->rect().width(),viewHeight);
-
-                    QPainter paintPlot(this);
-                    paintPlot.setBrush(QBrush(this->keyColor[i],Qt::SolidPattern));
-                    paintPlot.drawPolygon(poly);
-                }
-
-                i++;
-            }
-        }
-    }
-
+    this->drawPlot();
 }
 
 void HistogramView::drawGrid()
@@ -171,16 +142,89 @@ void HistogramView::drawScale()
     {
         //TODO
     }
-
-    if(this->scaleType == COLORCODE)
+    else
     {
-        QLinearGradient gradient(0,0,this->rect().width(),0);
+        if(this->scaleType == COLORCODE)
+        {
+            QLinearGradient gradient(0,0,this->rect().width(),0);
 
-        gradient.setColorAt(0,Qt::white);
-        gradient.setColorAt(1,Qt::black);
-        painter.setBrush(gradient);
-        painter.drawRect(0,this->rect().height()-this->scaleHeight,this->rect().width(),this->scaleHeight);
+            gradient.setColorAt(0,Qt::white);
+            gradient.setColorAt(1,Qt::black);
+            painter.setBrush(gradient);
+            painter.drawRect(0,this->rect().height()-this->scaleHeight,this->rect().width(),this->scaleHeight);
+        }
     }
+}
+
+void HistogramView::drawPlot()
+{
+    if(this->data)
+    {
+        if(this->data->isValid())
+        {
+            qreal binWidth = (qreal) this->rect().width() / (qreal) this->data->getNumberOfBins();
+            int i = 0; //iterates through keyState
+
+            foreach (int key, this->keys)
+            {
+                if(this->keyState[i]) //if plot enabled proceed
+                {
+                    QPolygonF poly;
+                    quint64 div = 0;
+
+                    int viewHeight = this->rect().height() - this->scaleHeight;
+                    const HistogramData::Bins* bins = this->data->getBins(key);
+                    int x = 0;
+
+                    switch(this->keyPlotType[i])
+                    {
+                    case ABSOLUTE:
+                        div = this->data->getNumberOfSamples();
+                        break;
+                    case RELATIVE:
+                        div = this->largestBinSize;
+                        break;
+                    case RELATIVEEACHKEY:
+                        div = this->data->getBinMax(key);
+                        break;
+                    }
+
+                    if(bins->first() != 0)      //otherwise the polygon looks strange
+                        poly << QPointF(0,viewHeight);
+
+                    foreach (unsigned int y, *bins)
+                    {
+                        poly << QPointF(x*binWidth,viewHeight - (y*viewHeight/div));
+                        x++;
+                    }
+
+                    if(bins->last() != 0) //otherwise the polygon looks strange
+                        poly << QPointF(this->rect().width(),viewHeight);
+
+                    QPainter paintPlot(this);
+                    paintPlot.setBrush(this->keyBrush[i]);
+                    paintPlot.drawPolygon(poly);
+                }
+
+                i++;
+            }
+        }
+    }
+}
+
+void HistogramView::dataUpdated()
+{
+    this->largestBinSize = 0;
+
+    if(this->data)
+    {
+        foreach(int key,this->keys) //determins which key got the largest bin
+        {
+            this->largestBinSize = (this->largestBinSize < this->data->getBinMax(key)) ? this->data->getBinMax(key) : this->largestBinSize;
+        }
+    }
+
+    this->update();
 }
 
 bool HistogramView::toggleKey(int key)
@@ -197,15 +241,41 @@ bool HistogramView::toggleKey(int key)
     return false;
 }
 
-bool HistogramView::setKeyColor(int key, const QColor &color)
+bool HistogramView::setKeyPlotStyle(int key, const QColor &color)
 {
     int i = this->keys.indexOf(key);
 
     if(i > -1)
     {
-        QColor alpha = color;
-        alpha.setAlpha(200);
-        this->keyColor[i] = alpha;
+        this->keyBrush[i] = QBrush(color);
+        this->update();
+        return true;
+    }
+
+    return false;
+}
+
+bool HistogramView::setKeyPlotStyle(int key, const QBrush& brush)
+{
+    int i = this->keys.indexOf(key);
+
+    if(i > -1)
+    {
+        this->keyBrush[i] = brush;
+        this->update();
+        return true;
+    }
+
+    return false;
+}
+
+bool HistogramView::setKeyPlotType(int key, HistogramView::PlotType type)
+{
+    int i = this->keys.indexOf(key);
+
+    if(i > -1)
+    {
+        this->keyPlotType[i] = type;
         this->update();
         return true;
     }

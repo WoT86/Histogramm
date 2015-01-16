@@ -19,6 +19,11 @@ public:
         NUMERIC,COLORCODE
     };
 
+    enum PlotType
+    {
+        ABSOLUTE,RELATIVE, RELATIVEEACHKEY
+    };
+
 public:
     explicit HistogramView(QWidget *parent = 0);
     ~HistogramView();
@@ -36,17 +41,23 @@ public:
     void setData(HistogramData* data);
 
     bool toggleKey(int key);
-    bool setKeyColor(int key, const QColor& color);
+
+    bool setKeyPlotStyle(int key, const QColor& color);
+    bool setKeyPlotStyle(int key, const QBrush& brush);
+
+    bool setKeyPlotType(int key, PlotType type);
 
 protected:
     void paintEvent(QPaintEvent* event);
 
     void drawGrid();
     void drawScale();
+    void drawPlot();
 
 signals:
 
-public slots:
+protected slots:
+    void dataUpdated();
 
 protected:
     QColor  backgroundColor;
@@ -63,7 +74,10 @@ protected:
 
     QList<int>      keys;
     QVector<bool>   keyState;
-    QVector<QColor> keyColor;
+    QVector<QBrush> keyBrush;
+    QVector<PlotType> keyPlotType;
+
+    quint64 largestBinSize;
 };
 
 #endif // HISTOGRAMVIEW_H

@@ -14,6 +14,8 @@ RGBHistogramData::RGBHistogramData(const QImage *image):
     this->binMax.insert(RED,0);
     this->binMax.insert(GREEN,0);
     this->binMax.insert(BLUE,0);
+
+    this->numberOfSamples = image->height() * image->width();
 }
 
 RGBHistogramData::~RGBHistogramData()
@@ -30,7 +32,7 @@ bool RGBHistogramData::isValid()
 
 void RGBHistogramData::calculate(int numberOfBins)
 {
-    int cDRed = 0,cDGreen = 0,cDBlue = 0;
+    quint64 cDRed = 0,cDGreen = 0,cDBlue = 0;
     this->numberOfBins = numberOfBins;
 
     switch(this->image->depth())
@@ -80,7 +82,7 @@ void RGBHistogramData::calculate(int numberOfBins)
             this->binSize[BLUE] = cDBlue / this->numberOfBins;
 
             int red = 0,green = 0,blue = 0;
-            unsigned int redMax = 0, greenMax = 0, blueMax = 0;
+            quint64 redMax = 0, greenMax = 0, blueMax = 0;
 
             for(int x = 0;x < this->image->width();x++)
             {
@@ -109,6 +111,7 @@ void RGBHistogramData::calculate(int numberOfBins)
             this->binMax[BLUE] = blueMax;
             this->binMax[GREEN] = greenMax;
 
+            emit this->updated();
             this->valid = true;
             return;
         }

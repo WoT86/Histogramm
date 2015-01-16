@@ -1,6 +1,8 @@
 #include "histogramdata.h"
 
-HistogramData::HistogramData()
+HistogramData::HistogramData(QObject *parent):
+    QObject(parent),
+    numberOfSamples(0)
 {
 }
 
@@ -9,14 +11,19 @@ int HistogramData::getNumberOfBins() const
     return this->numberOfBins;
 }
 
-int HistogramData::getBinSize(int key) const
+quint64 HistogramData::getBinSize(int key) const
 {
     return this->binSize[key];
 }
 
-unsigned int HistogramData::getBinMax(int key) const
+quint64 HistogramData::getBinMax(int key) const
 {
     return this->binMax[key];
+}
+
+quint64 HistogramData::getNumberOfSamples() const
+{
+    return this->numberOfSamples;
 }
 
 const HistogramData::Bins *HistogramData::getBins(int key) const
