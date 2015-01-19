@@ -6,7 +6,7 @@ HistogramData::HistogramData(QObject *parent):
 {
 }
 
-int HistogramData::getNumberOfBins() const
+quint32 HistogramData::getNumberOfBins() const
 {
     return this->numberOfBins;
 }

@@ -5,6 +5,8 @@
 #include <QFileDialog>
 #include <QPixmap>
 #include <QImage>
+#include <QThread>
+
 #include "histogramview.h"
 #include "rgbhistogramdata.h"
 
@@ -41,6 +43,8 @@ private:
     Ui::MainWindow *ui;
     HistogramData *data;
     QImage* image;
+
+    QThread workerThread;
 };
 
 #endif // MAINWINDOW_H

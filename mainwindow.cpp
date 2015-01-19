@@ -38,11 +38,13 @@ void MainWindow::on_buttonLoad_clicked()
     this->ui->checkBoxGreen->setChecked(true);
 
     if(this->data)
-        delete this->data;
-    this->data = new RGBHistogramData(this->image);
-    this->data->calculate(this->ui->comboBoxNoB->currentText().toInt());
+        this->data->deleteLater();
 
+    this->data = new RGBHistogramData(this->image);
     this->ui->histogramView->setData(this->data);
+
+    this->data->calculate(this->ui->comboBoxNoB->currentText().toUInt());
+
     this->ui->histogramView->setKeyPlotStyle(RGBHistogramData::RED,QColor(Qt::red));
     this->ui->histogramView->setKeyPlotStyle(RGBHistogramData::GREEN,QColor(Qt::green));
     this->ui->histogramView->setKeyPlotStyle(RGBHistogramData::BLUE,QColor(Qt::blue));
@@ -94,7 +96,6 @@ void MainWindow::on_radioButtonRelEach_clicked()
 void MainWindow::on_buttonCalc_clicked()
 {
     this->ui->buttonCalc->setEnabled(false);
-    if(this->data)
-        this->data->calculate(this->ui->comboBoxNoB->currentText().toInt());
+    this->data->calculate(this->ui->comboBoxNoB->currentText().toUInt());
     this->ui->buttonCalc->setEnabled(true);
 }

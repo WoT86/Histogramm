@@ -11,15 +11,14 @@ class HistogramData : public QObject
     Q_OBJECT
 public:
     typedef QVector<quint64> Bins;
+    typedef QMap<int,Bins*> BinMap;
 public:
     HistogramData(QObject* parent = 0);
     virtual ~HistogramData(){};
 
     virtual bool isValid() = 0;
 
-    virtual void calculate(int numberOfBins) = 0;
-
-    int getNumberOfBins() const;
+    quint32 getNumberOfBins() const;
     quint64 getBinSize(int key) const;
     quint64 getBinMax(int key) const;
     quint64 getNumberOfSamples() const;
@@ -28,8 +27,11 @@ public:
 
     QList<int> getKeys() const;
 
+public slots:
+    virtual void calculate(int numberOfBins) = 0;
+
 signals:
-    void updated();
+    void dataUpdated();
 
 protected:
     QMap<int,Bins*> binMap;
@@ -37,7 +39,7 @@ protected:
     QMap<int,quint64> binSize;
 
     quint64 numberOfSamples;
-    int numberOfBins;
+    quint32 numberOfBins;
 };
 
 #endif // HISTOGRAMDATA_H

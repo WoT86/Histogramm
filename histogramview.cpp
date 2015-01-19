@@ -65,7 +65,7 @@ void HistogramView::setData(HistogramData *data)
     if(data)
     {
         if(this->data)
-            disconnect(this->data,SIGNAL(updated()),this,SLOT(dataUpdated()));
+            disconnect(this->data,SIGNAL(dataUpdated()),this,SLOT(dataUpdated()));
 
         this->data = data;
         this->keys = data->getKeys();
@@ -87,9 +87,10 @@ void HistogramView::setData(HistogramData *data)
                 i = 4;
         }
 
-        connect(data,SIGNAL(updated()),this,SLOT(dataUpdated()));
+        connect(data,SIGNAL(dataUpdated()),this,SLOT(dataUpdated()));
     }
-    this->dataUpdated();
+
+    this->update();
 }
 
 void HistogramView::paintEvent(QPaintEvent *event)
@@ -182,7 +183,13 @@ void HistogramView::drawPlot()
                         div = this->data->getNumberOfSamples();
                         break;
                     case RELATIVE:
-                        div = this->largestBinSize;
+                        if(this->largestBinSize > 0)
+                            div = this->largestBinSize;
+                        else
+                        {
+                            this->dataUpdated();
+                            return;
+                        }
                         break;
                     case RELATIVEEACHKEY:
                         div = this->data->getBinMax(key);
