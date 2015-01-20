@@ -22,8 +22,8 @@ public:
     RGBHistogramData(const QImage* image,QObject* parent = 0);
     ~RGBHistogramData();
 
-    bool isValid();
-    bool isBusy();
+    bool isValid() const;
+    bool isBusy() const;
 
 public slots:
     virtual void calculate(int numberOfBins);

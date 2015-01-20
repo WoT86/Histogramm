@@ -16,6 +16,7 @@ HistogramView::HistogramView(QWidget *parent) :
 
 HistogramView::~HistogramView()
 {
+    qDeleteAll(this->plotList);
 }
 
 void HistogramView::setBackgroundColor(const QColor &color)
@@ -68,24 +69,30 @@ void HistogramView::setData(HistogramData *data)
             disconnect(this->data,SIGNAL(dataUpdated()),this,SLOT(dataUpdated()));
 
         this->data = data;
-        this->keys = data->getKeys();
-        this->keyState.clear();
-        this->keyState.fill(true,this->keys.size());
-        this->keyBrush.clear();
-        this->keyPlotType.clear();
+        this->plotList.clear();
 
-        int i = 4;
+        int i = 4, z = 0;
 
-        for(int k = 0; k < this->keys.size();k++)
+        foreach(int key, this->data->getKeys())
         {
             QColor color(i);
             color.setAlpha(200);
-            this->keyBrush.append(QBrush(color));
-            this->keyPlotType.append(RELATIVE);
+
+            Plot* nP = new Plot(this,this->data,key);
+            this->plotList.append(nP);
+            this->plotMap.insert(key,nP);
+            nP->setBrush(QBrush(color));
+            nP->setZPos(z);
+
             i++;
+            z++;
             if(i == 19)
                 i = 4;
         }
+
+        qSort(this->plotList);
+
+        this->frontPlot = this->plotList.last();
 
         connect(data,SIGNAL(dataUpdated()),this,SLOT(dataUpdated()));
     }
@@ -115,6 +122,24 @@ void HistogramView::paintEvent(QPaintEvent *event)
     this->drawPlot();
 }
 
+void HistogramView::resizeEvent(QResizeEvent *event)
+{
+    this->updatePlots();
+
+    QWidget::resizeEvent(event);
+}
+
+void HistogramView::mousePressEvent(QMouseEvent *event)
+{
+    QPointF pos = event->localPos();
+
+    foreach(Plot* plot,this->plotList)
+    {
+        if(plot->getPolygon()->containsPoint(pos,Qt::OddEvenFill))
+            this->setFrontPlot(plot->key());
+    }
+}
+
 void HistogramView::drawGrid()
 {
     QPainter painter(this);
@@ -141,7 +166,32 @@ void HistogramView::drawScale()
 
     if(this->scaleType == NUMERIC)
     {
-        //TODO
+        QFont font;
+        QString max, half;
+        font.setPixelSize(this->scaleHeight);
+        QFontMetrics fm(font);
+
+        painter.setFont(font);
+        painter.setBrush(QBrush(Qt::white));
+
+        painter.drawRect(0,this->rect().height()-this->scaleHeight,this->rect().width(),this->scaleHeight);
+
+        if(this->plotList.isEmpty())
+        {
+            painter.setPen(QPen(Qt::black));
+            max = "n";
+        }
+        else
+        {
+            painter.setPen(QPen(this->frontPlot->getBrush()->color()));
+            half = QString::number((quint64) (this->frontPlot->getScaleMax()/2));
+            max = QString::number(this->frontPlot->getScaleMax()-1);
+        }
+
+        painter.drawText(1,this->rect().height()-1,"0");
+        painter.drawText(((int) (this->rect().width()/2))-((int)fm.width(max)/2),this->rect().height()-1,half);
+        painter.drawText(this->rect().width()-fm.width(max)-1,this->rect().height()-1,max);
+
     }
     else
     {
@@ -150,7 +200,12 @@ void HistogramView::drawScale()
             QLinearGradient gradient(0,0,this->rect().width(),0);
 
             gradient.setColorAt(0,Qt::white);
-            gradient.setColorAt(1,Qt::black);
+
+            if(this->plotList.isEmpty())
+                gradient.setColorAt(1,Qt::black);
+            else
+                gradient.setColorAt(1,this->frontPlot->getBrush()->color());
+
             painter.setBrush(gradient);
             painter.drawRect(0,this->rect().height()-this->scaleHeight,this->rect().width(),this->scaleHeight);
         }
@@ -163,84 +218,64 @@ void HistogramView::drawPlot()
     {
         if(this->data->isValid())
         {
-            qreal binWidth = (qreal) this->rect().width() / (qreal) this->data->getNumberOfBins();
-            int i = 0; //iterates through keyState
-
-            foreach (int key, this->keys)
+            foreach (Plot *plot, this->plotList)
             {
-                if(this->keyState[i]) //if plot enabled proceed
+                if(plot->isEnabled() && plot->isValid())
                 {
-                    QPolygonF poly;
-                    quint64 div = 0;
-
-                    int viewHeight = this->rect().height() - this->scaleHeight;
-                    const HistogramData::Bins* bins = this->data->getBins(key);
-                    int x = 0;
-
-                    switch(this->keyPlotType[i])
-                    {
-                    case ABSOLUTE:
-                        div = this->data->getNumberOfSamples();
-                        break;
-                    case RELATIVE:
-                        if(this->largestBinSize > 0)
-                            div = this->largestBinSize;
-                        else
-                        {
-                            this->dataUpdated();
-                            return;
-                        }
-                        break;
-                    case RELATIVEEACHKEY:
-                        div = this->data->getBinMax(key);
-                        break;
-                    }
-
-                    if(bins->first() != 0)      //otherwise the polygon looks strange
-                        poly << QPointF(0,viewHeight);
-
-                    foreach (unsigned int y, *bins)
-                    {
-                        poly << QPointF(x*binWidth,viewHeight - (y*viewHeight/div));
-                        x++;
-                    }
-
-                    if(bins->last() != 0) //otherwise the polygon looks strange
-                        poly << QPointF(this->rect().width(),viewHeight);
-
                     QPainter paintPlot(this);
-                    paintPlot.setBrush(this->keyBrush[i]);
-                    paintPlot.drawPolygon(poly);
+                    paintPlot.setBrush(*(plot->getBrush()));
+                    paintPlot.drawPolygon(*plot);
                 }
-
-                i++;
             }
         }
     }
 }
 
-void HistogramView::dataUpdated()
+void HistogramView::updateMax()
 {
     this->largestBinSize = 0;
 
     if(this->data)
     {
-        foreach(int key,this->keys) //determins which key got the largest bin
+        foreach(int key,this->data->getKeys()) //determins which key got the largest bin
         {
             this->largestBinSize = (this->largestBinSize < this->data->getBinMax(key)) ? this->data->getBinMax(key) : this->largestBinSize;
         }
     }
+}
 
+void HistogramView::updatePlots()
+{
+    foreach(Plot* plot, this->plotList)
+    {
+        plot->update();
+    }
+}
+
+void HistogramView::dataUpdated()
+{  
+    this->updateMax();
+    this->updatePlots();
     this->update();
 }
 
 bool HistogramView::toggleKey(int key)
 {
-    int i = this->keys.indexOf(key);
-
-    if(i > -1)
+    if(this->plotMap.contains(key))
     {
-        this->keyState[i] = !(this->keyState[i]);
+        Plot* plot = this->plotMap[key];
+        bool old = plot->isEnabled();
+        plot->enable(!(old));
+
+        for(int i = this->plotList.size()-1;i > 0;i--) //updates the front plot pointer, otherwise drawScale works with wrong limits
+        {
+            if(this->plotList[i]->isEnabled())
+            {
+                this->frontPlot = this->plotList[i];
+                break;
+            }
+        }
+
         this->update();
         return true;
     }
@@ -250,11 +285,9 @@ bool HistogramView::toggleKey(int key)
 
 bool HistogramView::setKeyPlotStyle(int key, const QColor &color)
 {
-    int i = this->keys.indexOf(key);
-
-    if(i > -1)
+    if(this->plotMap.contains(key))
     {
-        this->keyBrush[i] = QBrush(color);
+        this->plotMap[key]->setBrush(QBrush(color));
         this->update();
         return true;
     }
@@ -264,11 +297,9 @@ bool HistogramView::setKeyPlotStyle(int key, const QColor &color)
 
 bool HistogramView::setKeyPlotStyle(int key, const QBrush& brush)
 {
-    int i = this->keys.indexOf(key);
-
-    if(i > -1)
+    if(this->plotMap.contains(key))
     {
-        this->keyBrush[i] = brush;
+        this->plotMap[key]->setBrush(brush);
         this->update();
         return true;
     }
@@ -278,14 +309,175 @@ bool HistogramView::setKeyPlotStyle(int key, const QBrush& brush)
 
 bool HistogramView::setKeyPlotType(int key, HistogramView::PlotType type)
 {
-    int i = this->keys.indexOf(key);
-
-    if(i > -1)
+    if(this->plotMap.contains(key))
     {
-        this->keyPlotType[i] = type;
+        this->plotMap[key]->setType(type);
+        this->updatePlots();
         this->update();
         return true;
     }
 
     return false;
+}
+
+void HistogramView::setFrontPlot(int key)
+{
+    if(this->plotMap.contains(key) && this->plotList.size() > 1)
+    {
+        Plot* keyP = this->plotMap[key], *swapP = this->plotList.last();
+        int old_pos = keyP->zpos(), new_pos = swapP->zpos(), old_index = this->plotList.indexOf(keyP);
+
+        keyP->setZPos(new_pos);
+        swapP->setZPos(old_pos);
+
+        this->plotList.swap(this->plotList.size()-1,old_index);
+
+        this->frontPlot = keyP;
+
+        this->update();
+    }
+}
+
+HistogramView::Plot::Plot(const HistogramView *parent, const HistogramData *data, int key):
+    _key(key),
+    visible(true),
+    valid(false),
+    _type(RELATIVE),
+    scaleMax(0),
+    polygon(0),
+    brush(),
+    data(data),
+    parent(parent)
+{
+
+}
+
+bool HistogramView::Plot::operator <(const Plot& other)
+{
+    return this->z_order < other.z_order;
+}
+
+HistogramView::Plot::operator QPolygonF()
+{
+    return (*this->polygon);
+}
+
+void HistogramView::Plot::enable(bool toEnable)
+{
+    this->visible = toEnable;
+}
+
+void HistogramView::Plot::setType(HistogramView::PlotType type)
+{
+    this->_type = type;
+}
+
+void HistogramView::Plot::setBrush(const QBrush &brush)
+{
+    this->brush = brush;
+}
+
+void HistogramView::Plot::setZPos(int newZ)
+{
+    this->z_order = newZ;
+}
+
+int HistogramView::Plot::key() const
+{
+    return this->_key;
+}
+
+bool HistogramView::Plot::isEnabled() const
+{
+    return this->visible;
+}
+
+bool HistogramView::Plot::isValid() const
+{
+    return this->valid;
+}
+
+HistogramView::PlotType HistogramView::Plot::type() const
+{
+    return this->_type;
+}
+
+quint64 HistogramView::Plot::getScaleMax() const
+{
+    return this->scaleMax;
+}
+
+const QPolygonF *HistogramView::Plot::getPolygon() const
+{
+    return this->polygon;
+}
+
+const QBrush *HistogramView::Plot::getBrush() const
+{
+    return (&this->brush);
+}
+
+int HistogramView::Plot::zpos() const
+{
+    return this->z_order;
+}
+
+void HistogramView::Plot::update()
+{
+    if(this->data)
+    {
+        if(this->data->isValid())
+        {
+            QRect widgetRect = this->parent->rect();
+
+            int   viewHeight    = widgetRect.height() - this->parent->scaleHeight;
+            qreal binWidth      = (qreal) widgetRect.width() / (qreal) this->data->getNumberOfBins();
+
+            quint64 div = 0;
+
+            const HistogramData::Bins* bins = this->data->getBins(this->_key);
+
+            int x = 0;
+
+            switch(this->_type)
+            {
+            case ABSOLUTE:
+                div = this->data->getNumberOfSamples();
+                break;
+            case RELATIVE:
+                if(this->parent->largestBinSize == 0)
+                {
+                    this->valid = false;
+                    return;
+                }
+
+                div = this->parent->largestBinSize;
+                break;
+            case RELATIVEEACHKEY:
+                div = this->data->getBinMax(this->_key);
+                break;
+            }
+
+            if(this->polygon)
+                delete this->polygon;
+
+            this->polygon = new QPolygonF();
+
+            if(bins->first() != 0)      //otherwise the polygon looks strange
+                (*this->polygon) << QPointF(0,viewHeight);
+
+            foreach (unsigned int y, *bins)
+            {
+                (*this->polygon) << QPointF(x*binWidth,viewHeight - (y*viewHeight/div));
+                x++;
+            }
+
+            if(bins->last() != 0) //otherwise the polygon looks strange
+                (*this->polygon) << QPointF(widgetRect.width(),viewHeight);
+
+            this->scaleMax = this->data->getBinScale(this->key());
+            this->valid = true;
+        }
+    }
+
 }

@@ -17,6 +17,30 @@ RGBHistogramData::RGBHistogramData(const QImage *image, QObject *parent):
     this->binMax.insert(GREEN,0);
     this->binMax.insert(BLUE,0);
 
+    switch(this->image->depth())
+    {
+    case 8:
+        this->binScale[RED] = qPow(2,3);
+        this->binScale[GREEN] = qPow(2,3);
+        this->binScale[BLUE] = qPow(2,2);
+        break;
+    case 16:
+        this->binScale[RED] = qPow(2,5);
+        this->binScale[GREEN] = qPow(2,6);
+        this->binScale[BLUE] = qPow(2,5);
+        break;
+    case 24:
+        this->binScale[RED] = qPow(2,8);
+        this->binScale[GREEN] = qPow(2,8);
+        this->binScale[BLUE] = qPow(2,8);
+        break;
+    case 32:
+        this->binScale[RED] = qPow(2,8);
+        this->binScale[GREEN] = qPow(2,8);
+        this->binScale[BLUE] = qPow(2,8);
+        break;
+    }
+
     this->numberOfSamples = image->height() * image->width();
     this->workerThread.start();
 }
@@ -31,12 +55,12 @@ RGBHistogramData::~RGBHistogramData()
     this->workerThread.wait();
 }
 
-bool RGBHistogramData::isValid()
+bool RGBHistogramData::isValid() const
 {
     return this->valid;
 }
 
-bool RGBHistogramData::isBusy()
+bool RGBHistogramData::isBusy() const
 {
     return this->busy;
 }
@@ -58,6 +82,13 @@ void RGBHistogramData::calculate(int numberOfBins)
 
 void RGBHistogramData::copyData(BinMap data, QMap<int, quint64> max, QMap<int, quint64> size, quint32 numberOfBins)
 {
+    if(this->binMap.first()) //deletes old vectors
+    {
+        delete this->binMap[RED];
+        delete this->binMap[GREEN];
+        delete this->binMap[BLUE];
+    }
+
     this->numberOfBins = numberOfBins;
     this->binMap = data;
     this->binMax = max;

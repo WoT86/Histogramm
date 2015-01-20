@@ -21,6 +21,11 @@ quint64 HistogramData::getBinMax(int key) const
     return this->binMax[key];
 }
 
+quint64 HistogramData::getBinScale(int key) const
+{
+    return this->binScale[key];
+}
+
 quint64 HistogramData::getNumberOfSamples() const
 {
     return this->numberOfSamples;

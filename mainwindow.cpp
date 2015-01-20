@@ -16,6 +16,8 @@ MainWindow::MainWindow(QWidget *parent) :
 
     this->ui->comboBoxNoB->addItems(str);
     this->ui->comboBoxNoB->setCurrentText("256");
+
+    this->ui->histogramView->setScaleType(HistogramView::NUMERIC);
 }
 
 MainWindow::~MainWindow()
@@ -40,7 +42,7 @@ void MainWindow::on_buttonLoad_clicked()
     if(this->data)
         this->data->deleteLater();
 
-    this->data = new RGBHistogramData(this->image);
+    this->data = new RGBHistogramData(this->image,this);
     this->ui->histogramView->setData(this->data);
 
     this->data->calculate(this->ui->comboBoxNoB->currentText().toUInt());

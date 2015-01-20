@@ -16,11 +16,12 @@ public:
     HistogramData(QObject* parent = 0);
     virtual ~HistogramData(){};
 
-    virtual bool isValid() = 0;
+    virtual bool isValid() const = 0;
 
     quint32 getNumberOfBins() const;
     quint64 getBinSize(int key) const;
     quint64 getBinMax(int key) const;
+    quint64 getBinScale(int key) const;
     quint64 getNumberOfSamples() const;
 
     const Bins* getBins(int key) const;
@@ -37,6 +38,7 @@ protected:
     QMap<int,Bins*> binMap;
     QMap<int,quint64> binMax;
     QMap<int,quint64> binSize;
+    QMap<int,quint64> binScale;
 
     quint64 numberOfSamples;
     quint32 numberOfBins;
