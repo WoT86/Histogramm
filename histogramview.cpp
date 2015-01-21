@@ -183,7 +183,10 @@ void HistogramView::drawScale()
         }
         else
         {
-            painter.setPen(QPen(this->frontPlot->getBrush()->color()));
+            QColor color = this->frontPlot->getBrush()->color(); //strip alpha channel
+            color.setAlpha(255);
+
+            painter.setPen(QPen(color));
             half = QString::number((quint64) (this->frontPlot->getScaleMax()/2));
             max = QString::number(this->frontPlot->getScaleMax()-1);
         }
@@ -204,7 +207,12 @@ void HistogramView::drawScale()
             if(this->plotList.isEmpty())
                 gradient.setColorAt(1,Qt::black);
             else
-                gradient.setColorAt(1,this->frontPlot->getBrush()->color());
+            {
+                QColor color = this->frontPlot->getBrush()->color(); //strip alpha channel
+                color.setAlpha(255);
+
+                gradient.setColorAt(1,color);
+            }
 
             painter.setBrush(gradient);
             painter.drawRect(0,this->rect().height()-this->scaleHeight,this->rect().width(),this->scaleHeight);

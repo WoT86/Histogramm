@@ -16,8 +16,6 @@ MainWindow::MainWindow(QWidget *parent) :
 
     this->ui->comboBoxNoB->addItems(str);
     this->ui->comboBoxNoB->setCurrentText("256");
-
-    this->ui->histogramView->setScaleType(HistogramView::NUMERIC);
 }
 
 MainWindow::~MainWindow()
@@ -47,9 +45,15 @@ void MainWindow::on_buttonLoad_clicked()
 
     this->data->calculate(this->ui->comboBoxNoB->currentText().toUInt());
 
-    this->ui->histogramView->setKeyPlotStyle(RGBHistogramData::RED,QColor(Qt::red));
-    this->ui->histogramView->setKeyPlotStyle(RGBHistogramData::GREEN,QColor(Qt::green));
-    this->ui->histogramView->setKeyPlotStyle(RGBHistogramData::BLUE,QColor(Qt::blue));
+    QColor red(Qt::red),green(Qt::green),blue(Qt::blue);
+
+    red.setAlpha(200);
+    blue.setAlpha(200);
+    green.setAlpha(200);
+
+    this->ui->histogramView->setKeyPlotStyle(RGBHistogramData::RED,red);
+    this->ui->histogramView->setKeyPlotStyle(RGBHistogramData::GREEN,green);
+    this->ui->histogramView->setKeyPlotStyle(RGBHistogramData::BLUE,blue);
 }
 
 void MainWindow::on_checkBoxRed_clicked()
@@ -70,8 +74,6 @@ void MainWindow::on_checkBoxBlue_clicked()
 
 void MainWindow::on_radioButtonRel_clicked()
 {
-    this->ui->radioButtonAbs->setChecked(false);
-    this->ui->radioButtonRelEach->setChecked(false);
     this->ui->histogramView->setKeyPlotType(RGBHistogramData::RED,HistogramView::RELATIVE);
     this->ui->histogramView->setKeyPlotType(RGBHistogramData::GREEN,HistogramView::RELATIVE);
     this->ui->histogramView->setKeyPlotType(RGBHistogramData::BLUE,HistogramView::RELATIVE);
@@ -79,8 +81,6 @@ void MainWindow::on_radioButtonRel_clicked()
 
 void MainWindow::on_radioButtonAbs_clicked()
 {
-    this->ui->radioButtonRel->setChecked(false);
-    this->ui->radioButtonRelEach->setChecked(false);
     this->ui->histogramView->setKeyPlotType(RGBHistogramData::RED,HistogramView::ABSOLUTE);
     this->ui->histogramView->setKeyPlotType(RGBHistogramData::GREEN,HistogramView::ABSOLUTE);
     this->ui->histogramView->setKeyPlotType(RGBHistogramData::BLUE,HistogramView::ABSOLUTE);
@@ -88,8 +88,6 @@ void MainWindow::on_radioButtonAbs_clicked()
 
 void MainWindow::on_radioButtonRelEach_clicked()
 {
-    this->ui->radioButtonRel->setChecked(false);
-    this->ui->radioButtonAbs->setChecked(false);
     this->ui->histogramView->setKeyPlotType(RGBHistogramData::RED,HistogramView::RELATIVEEACHKEY);
     this->ui->histogramView->setKeyPlotType(RGBHistogramData::GREEN,HistogramView::RELATIVEEACHKEY);
     this->ui->histogramView->setKeyPlotType(RGBHistogramData::BLUE,HistogramView::RELATIVEEACHKEY);
@@ -100,4 +98,15 @@ void MainWindow::on_buttonCalc_clicked()
     this->ui->buttonCalc->setEnabled(false);
     this->data->calculate(this->ui->comboBoxNoB->currentText().toUInt());
     this->ui->buttonCalc->setEnabled(true);
+}
+
+
+void MainWindow::on_radioButtonScaleColor_clicked()
+{
+    this->ui->histogramView->setScaleType(HistogramView::COLORCODE);
+}
+
+void MainWindow::on_radioButtonScaleNumeric_clicked()
+{
+    this->ui->histogramView->setScaleType(HistogramView::NUMERIC);
 }

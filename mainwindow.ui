@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>400</width>
-    <height>300</height>
+    <width>379</width>
+    <height>391</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -15,12 +15,26 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_3">
    <item>
-    <widget class="HistogramView" name="histogramView" native="true"/>
+    <widget class="HistogramView" name="histogramView" native="true">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+    </widget>
    </item>
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout_2">
      <item>
       <layout class="QVBoxLayout" name="verticalLayout">
+       <item>
+        <widget class="QLabel" name="label_3">
+         <property name="text">
+          <string>Channels</string>
+         </property>
+        </widget>
+       </item>
        <item>
         <widget class="QCheckBox" name="checkBoxRed">
          <property name="text">
@@ -56,10 +70,20 @@
      <item>
       <layout class="QVBoxLayout" name="verticalLayout_2">
        <item>
+        <widget class="QLabel" name="label_2">
+         <property name="text">
+          <string>Histogram Type</string>
+         </property>
+        </widget>
+       </item>
+       <item>
         <widget class="QRadioButton" name="radioButtonAbs">
          <property name="text">
           <string>Absolute</string>
          </property>
+         <attribute name="buttonGroup">
+          <string notr="true">groupHistogramType</string>
+         </attribute>
         </widget>
        </item>
        <item>
@@ -70,6 +94,9 @@
          <property name="checked">
           <bool>true</bool>
          </property>
+         <attribute name="buttonGroup">
+          <string notr="true">groupHistogramType</string>
+         </attribute>
         </widget>
        </item>
        <item>
@@ -77,6 +104,9 @@
          <property name="text">
           <string>Relative each Channel</string>
          </property>
+         <attribute name="buttonGroup">
+          <string notr="true">groupHistogramType</string>
+         </attribute>
         </widget>
        </item>
       </layout>
@@ -100,6 +130,40 @@
        <property name="text">
         <string>Calc</string>
        </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout_4">
+     <item>
+      <widget class="QLabel" name="label_4">
+       <property name="text">
+        <string>Scale Type</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QRadioButton" name="radioButtonScaleNumeric">
+       <property name="text">
+        <string>Numeric</string>
+       </property>
+       <attribute name="buttonGroup">
+        <string notr="true">groupScaleType</string>
+       </attribute>
+      </widget>
+     </item>
+     <item>
+      <widget class="QRadioButton" name="radioButtonScaleColor">
+       <property name="text">
+        <string>Color-coded</string>
+       </property>
+       <property name="checked">
+        <bool>true</bool>
+       </property>
+       <attribute name="buttonGroup">
+        <string notr="true">groupScaleType</string>
+       </attribute>
       </widget>
      </item>
     </layout>
@@ -135,4 +199,8 @@
  </customwidgets>
  <resources/>
  <connections/>
+ <buttongroups>
+  <buttongroup name="groupHistogramType"/>
+  <buttongroup name="groupScaleType"/>
+ </buttongroups>
 </ui>

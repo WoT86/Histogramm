@@ -39,6 +39,10 @@ private slots:
 
     void on_buttonCalc_clicked();
 
+    void on_radioButtonScaleColor_clicked();
+
+    void on_radioButtonScaleNumeric_clicked();
+
 private:
     Ui::MainWindow *ui;
     HistogramData *data;
