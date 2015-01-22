@@ -5,6 +5,8 @@
 #include <QColor>
 #include <qmath.h>
 #include <QThread>
+#include <QDebug>
+#include <QElapsedTimer>
 
 #include "histogramdata.h"
 

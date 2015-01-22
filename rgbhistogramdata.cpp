@@ -166,34 +166,48 @@ void RGBWorker::doWork(quint32 NumberOfBins)
             bMGreen->fill(0,NumberOfBins);
             bMBlue->fill(0,NumberOfBins);
 
-            this->binSize[RGBHistogramData::RED] = cDRed / NumberOfBins;
-            this->binSize[RGBHistogramData::GREEN] = cDGreen / NumberOfBins;
-            this->binSize[RGBHistogramData::BLUE] = cDBlue / NumberOfBins;
+            quint64 bSizeRed = cDRed / NumberOfBins, bSizeGreen = cDGreen / NumberOfBins, bSizeBlue = cDBlue / NumberOfBins;
+
+            this->binSize[RGBHistogramData::RED] = bSizeRed;
+            this->binSize[RGBHistogramData::GREEN] = bSizeGreen;
+            this->binSize[RGBHistogramData::BLUE] = bSizeBlue;
 
             int red = 0,green = 0,blue = 0;
             quint64 redMax = 0, greenMax = 0, blueMax = 0;
 
-            for(int x = 0;x < this->img->width();x++)
+            for(int y = 0;y < this->img->height();y++)
             {
-                for(int y = 0;y < this->img->height();y++)
+                QRgb *line = (QRgb*) this->img->scanLine(y);
+
+                for(int x = 0;x < this->img->width();x++)
                 {
-                    QColor rgb(this->img->pixel(x,y));
-                    red = rgb.red() / this->binSize[RGBHistogramData::RED];
-                    blue = rgb.blue() / this->binSize[RGBHistogramData::BLUE];
-                    green = rgb.green() / this->binSize[RGBHistogramData::GREEN];
+                    red = qRed(*line) / bSizeRed;
+                    blue = qBlue(*line) / bSizeBlue;
+                    green = qGreen(*line) / bSizeGreen;
 
                     (*bMRed)[red]+=1;
-                    if(bMRed->at(red) > redMax)
-                        redMax += 1;
 
                     (*bMBlue)[blue]+=1;
-                    if(bMBlue->at(blue) > blueMax)
-                        blueMax += 1;
 
                     (*bMGreen)[green]+=1;
-                    if(bMGreen->at(green) > greenMax)
-                        greenMax += 1;
+
+                    line++;
                 }
+            }
+
+            foreach(quint64 value,*bMRed)
+            {
+                redMax = (value > redMax) ? value : redMax;
+            }
+
+            foreach(quint64 value,*bMGreen)
+            {
+                greenMax = (value > greenMax) ? value : greenMax;
+            }
+
+            foreach(quint64 value,*bMBlue)
+            {
+                blueMax = (value > blueMax) ? value : blueMax;
             }
 
             this->binMax[RGBHistogramData::RED] = redMax;

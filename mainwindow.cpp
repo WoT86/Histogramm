@@ -27,33 +27,36 @@ void MainWindow::on_buttonLoad_clicked()
 {
     QString file = QFileDialog::getOpenFileName(this,"Choose Image...",QString(),"Images (*.png *.jpg *.tiff *.bmp)");
 
-    if(this->image)
-        delete this->image;
+    if(!file.isNull())
+    {
+        if(this->image)
+            delete this->image;
 
-    this->image = new QImage(file);
+        this->image = new QImage(file);
 
-    this->ui->labelFile->setText(file);
-    this->ui->checkBoxBlue->setChecked(true);
-    this->ui->checkBoxRed->setChecked(true);
-    this->ui->checkBoxGreen->setChecked(true);
+        this->ui->labelFile->setText(file);
+        this->ui->checkBoxBlue->setChecked(true);
+        this->ui->checkBoxRed->setChecked(true);
+        this->ui->checkBoxGreen->setChecked(true);
 
-    if(this->data)
-        this->data->deleteLater();
+        if(this->data)
+            this->data->deleteLater();
 
-    this->data = new RGBHistogramData(this->image,this);
-    this->ui->histogramView->setData(this->data);
+        this->data = new RGBHistogramData(this->image,this);
+        this->ui->histogramView->setData(this->data);
 
-    this->data->calculate(this->ui->comboBoxNoB->currentText().toUInt());
+        this->data->calculate(this->ui->comboBoxNoB->currentText().toUInt());
 
-    QColor red(Qt::red),green(Qt::green),blue(Qt::blue);
+        QColor red(Qt::red),green(Qt::green),blue(Qt::blue);
 
-    red.setAlpha(200);
-    blue.setAlpha(200);
-    green.setAlpha(200);
+        red.setAlpha(200);
+        blue.setAlpha(200);
+        green.setAlpha(200);
 
-    this->ui->histogramView->setKeyPlotStyle(RGBHistogramData::RED,red);
-    this->ui->histogramView->setKeyPlotStyle(RGBHistogramData::GREEN,green);
-    this->ui->histogramView->setKeyPlotStyle(RGBHistogramData::BLUE,blue);
+        this->ui->histogramView->setKeyPlotStyle(RGBHistogramData::RED,red);
+        this->ui->histogramView->setKeyPlotStyle(RGBHistogramData::GREEN,green);
+        this->ui->histogramView->setKeyPlotStyle(RGBHistogramData::BLUE,blue);
+    }
 }
 
 void MainWindow::on_checkBoxRed_clicked()
